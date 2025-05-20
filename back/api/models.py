@@ -1,12 +1,18 @@
 from django.db import models
 
 class Sensores(models.Model):
-    sensor = models.CharField(max_length=100)
-    mac_adress = models.CharField(max_length=256)
+    SENSOR_TYPES = [
+        ('temperatura', 'Temperatura (°C)'),
+        ('umidade', 'Umidade (%)'),
+        ('luminosidade', 'Luminosidade (lux)'),
+        ('contador', 'Contador (num)'),
+    ]
+    sensor = models.CharField(max_length=20, choices=SENSOR_TYPES)
+    mac_address = models.CharField(max_length=256)
     unidade_med = models.CharField(max_length=100)
     latitude = models.FloatField()
     longitude = models.FloatField()
-    status = models.BooleanField()
+    status = models.BooleanField(default=False)
 
 class Ambientes(models.Model):
     sig = models.IntegerField()
@@ -17,5 +23,5 @@ class Ambientes(models.Model):
 class Historicos(models.Model):
     sensor = models.ForeignKey('Sensores', on_delete=models.CASCADE)
     ambiente = models.ForeignKey('Ambientes', on_delete=models.CASCADE)
-    Valor = models.FloatField()
-    timestamp = models.IntegerField()
+    valor = models.FloatField()
+    timestamp = models.DateTimeField()

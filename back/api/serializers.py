@@ -29,16 +29,6 @@ class AmbientesSerializer(serializers.ModelSerializer):
         fields = '__all__'   
 
 class HistoricosSerializer(serializers.ModelSerializer):
-    sensor = SensoresSerializer(read_only=True)
-    sensor_id = serializers.PrimaryKeyRelatedField(
-        queryset = Sensores.objects.all(), source='sensor', write_only=True
-    )
-    
-    ambiente = AmbientesSerializer(read_only=True)
-    ambiente_id = serializers.PrimaryKeyRelatedField(
-        queryset = Ambientes.objects.all(), source='ambientes', write_only=True
-    )
-
     class Meta:
         model = Historicos
-        fields = ['id', 'sensor', 'ambiente', 'observacoes']
+        fields = '__all__'
