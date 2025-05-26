@@ -20,4 +20,5 @@ urlpatterns = [
     path('historicos/search', HistoricosSearchView.as_view(), name='historicos-search'),
     path('historicos/ultimas24h', HistoricosUltimas24hView.as_view(), name='historicos-ultimas-24h'),
     path('leitura_arquivos', importar_planilhas, name='leitura_arquivos'),
+    path('exportar_historicos/', ExportHistoricosView.as_view(), name='exportar-historicos'),
 ]

@@ -14,6 +14,12 @@ from django_filters.rest_framework import DjangoFilterBackend, FilterSet, DateTi
 from django.utils import timezone
 from datetime import timedelta
 import pandas as pd
+from django.views import View
+from django.http import HttpResponse
+from datetime import datetime
+import csv
+import openpyxl
+from io import BytesIO
 
 
 class SignUpView(CreateAPIView):
@@ -229,3 +235,67 @@ def importar_planilhas(request):
     return JsonResponse({
         "sucesso": f"{sensores_inseridos} sensores, {ambientes_inseridos} ambientes e {historicos_inseridos} históricos inseridos."
     })
+
+
+# Exportação de arquivo xlsx
+
+class ExportHistoricosView(View):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        # Filtrar os dados com base nos parâmetros da URL
+        queryset = HistoricosFilter(request.GET, queryset=Historicos.objects.all()).qs
+
+        # Formato do arquivo (csv ou excel)
+        file_format = request.GET.get('format', 'csv').lower()
+
+        if file_format == 'csv':
+            return self.export_csv(queryset)
+        elif file_format == 'excel':
+            return self.export_excel(queryset)
+        else:
+            return HttpResponse("Formato inválido. Use 'csv' ou 'excel'.", status=400)
+
+    def export_csv(self, queryset):
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="historicos_{datetime.now().strftime("%Y-%m-%d")}.csv"'
+
+        writer = csv.writer(response)
+        # Cabeçalhos do CSV
+        writer.writerow(['ID', 'Sensor', 'Ambiente', 'Valor', 'Timestamp'])
+
+        # Dados
+        for historico in queryset:
+            writer.writerow([
+                historico.id,
+                historico.sensor.sensor,  
+                historico.ambiente.descricao,  
+                historico.valor,
+                historico.timestamp
+            ])
+
+        return response
+
+    def export_excel(self, queryset):
+        workbook = openpyxl.Workbook()
+        sheet = workbook.active
+        sheet.title = "Históricos"
+
+        # Cabeçalhos
+        headers = ['ID', 'Sensor', 'Ambiente', 'Valor', 'Timestamp']
+        for col_num, header in enumerate(headers, 1):
+            sheet.cell(row=1, column=col_num, value=header)
+
+        # Dados
+        for row_num, historico in enumerate(queryset, start=2):
+            sheet.cell(row=row_num, column=1, value=historico.id)
+            sheet.cell(row=row_num, column=2, value=historico.sensor.sensor)
+            sheet.cell(row=row_num, column=3, value=historico.ambiente.descricao)
+            sheet.cell(row=row_num, column=4, value=historico.valor)
+            sheet.cell(row=row_num, column=5, value=historico.timestamp)
+
+        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = f'attachment; filename="historicos_{datetime.now().strftime("%Y-%m-%d")}.xlsx"'
+
+        workbook.save(response)
+        return response
